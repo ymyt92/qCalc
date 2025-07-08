@@ -4,7 +4,11 @@
             <div v-for="s in 9" :class="['square', 's' + s]">
                 <template v-if="s !== 5">
                     <div class="cell c1">
-                        <p>{{ getSquareScore(s) }}</p>
+                        <p class="sum">{{ getSquareScore(s) }}</p>
+                        <el-popover placement="right-end" title="计分详情" width="250" trigger="click">
+                            <p class="sum-detail">{{ sumDetailObj[s] }}</p>
+                            <i class="el-icon-view" slot="reference"></i>
+                        </el-popover>
                     </div>
                     <div class="cell c2">
                         <el-form-item>
@@ -177,6 +181,7 @@ export default {
                 s8: "水",
                 s9: "金",
             },
+            sumDetailObj: {},
         }
     },
     computed: {
@@ -230,45 +235,70 @@ export default {
         getSquareScore(s) {
             let square = this.squareScoreMap["s" + s]
             let sum = 200
+            let scoreTextObj = {
+                tianShi: "天时:",
+                diLi: "地利:",
+                renHe: "人和:",
+                shenZhu: "神助:",
+                zs12: "长生十二宫:",
+                diPanGan: "天干作用:",
+            }
+            let textObj = {}
             let trsz = ["tianShi", "renHe", "shenZhu"] // 天时 人和 神助直接计分
             for (let c in square) {
                 let value = square[c]
                 let num = 0
                 if (value && value.length) {
-                    if (trsz.includes(c) && value) {
+                    if (trsz.includes(c)) {
                         num = this[`${c}Map`][value]
+                        textObj[c] = value + "--" + num
                     }
-                    if (c === "zs12" && value.length) {
+                    if (c === "zs12") {
                         let temp = this.zs12Map[value[0]]
                         let last = value[1]
                         if (last) {
                             temp += this.zs12Map[last]
                         }
                         num = temp / value.length // 取平均值
+                        textObj[c] = value.join("") + "--" + num
                     }
                     // 天盘干
                     if (c === "sky") {
                         // 地利计算
                         let squareType = this.squareTypeMap["s" + s] // 宫属性
                         let skyGanType = this.getTianGanwuxing(value)
-                        num = this.calcWxRelation(
+                        let rel = this.calcWxRelation(
                             skyGanType,
                             squareType,
                             "diLi"
                         )
+                        num = rel.score
+                        textObj["diLi"] = rel.text + "--" + num
                         // 地盘干关系计算
                         let earthGan = square["earth"]
                         if (earthGan) {
-                            num += this.calcWxRelation(
-                                earthGan,
+                            let earthGanType = this.getTianGanwuxing(earthGan)
+                            let rel = this.calcWxRelation(
+                                earthGanType,
                                 skyGanType,
                                 "diPanGan"
                             )
+                            let _num = rel.score
+                            textObj["diPanGan"] = rel.text + "--" + _num
+                            num += _num
                         }
                     }
                 }
                 sum += num
             }
+            let text = "基础分:200\n"
+            for (let key in scoreTextObj) {
+                let str = textObj[key]
+                if (str) {
+                    text += scoreTextObj[key] + str + "\n"
+                }
+            }
+            this.sumDetailObj[s] = text
             return sum
         },
         /**
@@ -315,22 +345,23 @@ export default {
                 // 地利计算
                 if (type === "diLi") {
                     let map = {
-                        0: 30, // 我同宫--平顺有成(中吉),
-                        1: 0, // 我生宫--多有消耗(小凶),
-                        2: 10, // 我克宫--努力有得(小吉),
-                        3: 0, // 宫克我--多阻无成(大凶),
-                        4: 30, // 宫生我--得地支助(大吉),
+                        0: { score: 30, text: "我同宫--平顺有成(中吉)" },
+                        1: { score: 0, text: "我生宫--多有消耗(小凶)" },
+                        2: { score: 10, text: "我克宫--努力有得(小吉)" },
+                        3: { score: 0, text: "宫克我--多阻无成(大凶)" },
+                        4: { score: 30, text: "宫生我--得地支助(大吉)" },
                     }
                     return map[num]
                 }
                 // 地盘天干作用计算
                 if (type === "diPanGan") {
+                    console.log(self, other)
                     let map = {
-                        0: 30, // 地同天
-                        1: 30, // 地生天
-                        2: 0, // 地克天
-                        3: 20, // 天克地
-                        4: 20, // 天生地
+                        0: { score: 30, text: "地同天" },
+                        1: { score: 30, text: "地生天" },
+                        2: { score: 0, text: "地克天" },
+                        3: { score: 20, text: "天克地" },
+                        4: { score: 20, text: "天生地" },
                     }
                     return map[num]
                 }
@@ -414,11 +445,11 @@ export default {
     }
 
     .s2 {
-        background: #FFA07A;
+        background: #ffa07a;
     }
 
     .s3 {
-        background: #D2B48C;
+        background: #d2b48c;
     }
 
     .s4 {
@@ -426,23 +457,23 @@ export default {
     }
 
     .s5 {
-        background: #D2B48C;
+        background: #d2b48c;
     }
 
     .s6 {
-        background: #FFE4B5;
+        background: #ffffed;
     }
 
     .s7 {
-        background: #D2B48C;
+        background: #d2b48c;
     }
 
     .s8 {
-        background: #B0E2FF;
+        background: #b0e2ff;
     }
 
     .s9 {
-        background: #FFE4B5;
+        background: #ffffed;
     }
 
     .s5 {
@@ -473,8 +504,26 @@ export default {
     }
 
     .c1 {
-        font-size: 40px;
+        position: relative;
+
+        .sum {
+            font-size: 40px;
+        }
+
+        i {
+            color: #007dff;
+            cursor: pointer;
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-weight: 800;
+        }
     }
+}
+
+.sum-detail {
+    white-space: pre-wrap;
+    line-height: 1.5;
 }
 
 .el-select-dropdown__item {
