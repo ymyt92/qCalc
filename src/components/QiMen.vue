@@ -5,8 +5,13 @@
                 <template v-if="s !== 5">
                     <div class="cell c1">
                         <p class="sum">{{ getSquareScore(s) }}</p>
-                        <el-popover placement="right-end" title="计分详情" width="250" trigger="click">
-                            <p class="sum-detail">{{ sumDetailObj[s] }}</p>
+                        <el-popover placement="right-end" title="计分详情" width="450" trigger="click">
+                            <el-table :data="sumDetailObj[s]" border stripe>
+                                <el-table-column label="类型" prop="type"></el-table-column>
+                                <el-table-column label="值" prop="value"></el-table-column>
+                                <el-table-column label="分数"prop="score"></el-table-column>
+                                <el-table-column label="寓意" prop="mean" width="150"></el-table-column>
+                            </el-table>
                             <i class="el-icon-view" slot="reference"></i>
                         </el-popover>
                     </div>
@@ -17,7 +22,7 @@
                                     <span style="float: left" :class="{ red: value > 0 }">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                    }}</span>
+                                        }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
@@ -31,13 +36,13 @@
                                     <span style="float: left" :class="{ red: value > 0 }">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                    }}</span>
+                                        }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
                         <span class="square-type">{{
                             squareTypeMap["s" + s]
-                        }}</span>
+                            }}</span>
                     </div>
                     <div class="cell c6">
                         <el-form-item>
@@ -48,8 +53,8 @@
                                     <span :class="{
                                         red: zs12Map[data.label] > 0,
                                     }">&nbsp;&nbsp;{{
-                                        zs12Map[data.label]
-                                    }}</span>
+                                            zs12Map[data.label]
+                                        }}</span>
                                 </template>
                             </el-cascader>
                         </el-form-item>
@@ -59,23 +64,38 @@
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                    }}</span>
+                                        }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
                     </div>
                     <div class="cell c7"></div>
                     <div class="cell c8">
-                        <el-form-item>
-                            <el-select v-model="qCalcForm[`s${s}_renHe`]" clearable>
-                                <el-option v-for="(value, key) in renHeMap" :key="key" :label="key" :value="key">
-                                    <span style="float: left" :class="{ red: value > 0 }">{{ key }}</span>
-                                    <span style="float: right">{{
-                                        value
-                                    }}</span>
-                                </el-option>
-                            </el-select>
-                        </el-form-item>
+                        <div class="men-ct">
+                            <el-form-item :class="{ red: qCalcForm[`s${s}_menPo`] }">
+                                <el-select v-model="qCalcForm[`s${s}_renHe`]" clearable
+                                    @clear="qCalcForm[`s${s}_menPo`] = false">
+                                    <el-option v-for="(value, key) in renHeMap" :key="key" :label="key" :value="key">
+                                        <span style="float: left">{{
+                                            key
+                                            }}</span>
+                                        <span style="float: right">{{
+                                            value
+                                            }}</span>
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-popover v-if="qCalcForm[`s${s}_renHe`]" placement="right" trigger="click">
+                                <p style="
+                                        font-weight: 500;
+                                        margin-bottom: 10px;
+                                    ">
+                                    门迫
+                                </p>
+                                <el-switch v-model="qCalcForm[`s${s}_menPo`]"></el-switch>
+                                <i slot="reference" class="el-icon-menu"></i>
+                            </el-popover>
+                        </div>
                     </div>
                     <div class="cell c9">
                         <el-form-item>
@@ -84,7 +104,7 @@
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                    }}</span>
+                                        }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
@@ -182,46 +202,49 @@ export default {
                 s9: "金",
             },
             sumDetailObj: {},
-        }
+        };
     },
     computed: {
         // 12周期级联选择
         zs12Casc() {
-            let arr = Object.keys(this.zs12Map)
-            return arr.map((val, index) => {
-                let children = [...arr.slice(0, index), ...arr.slice(index + 1)] // 除去本身
+            let arr = Object.keys(this.zs12Map);
+            let casc = arr.map((val, index) => {
+                let children = [
+                    ...arr.slice(0, index),
+                    ...arr.slice(index + 1),
+                ]; // 除去本身
                 children = children.map((item) => {
                     return {
                         label: item,
                         value: item,
-                    }
-                })
+                    };
+                });
                 let obj = {
                     label: val,
                     value: val,
                     children,
-                }
-                return obj
-            })
+                };
+                return obj;
+            });
+            return casc;
         },
     },
     watch: {
         qCalcForm: {
             handler(val) {
-                let obj = {}
+                let obj = {};
                 for (let key in val) {
-                    let arr = key.split("_")
-                    let s = arr[0]
-                    let c = arr[1]
-                    let square = obj[s]
+                    let arr = key.split("_");
+                    let s = arr[0];
+                    let c = arr[1];
+                    let square = obj[s];
                     if (!square) {
-                        obj[s] = {}
-                        square = obj[s]
+                        obj[s] = {};
+                        square = obj[s];
                     }
-                    square[c] = val[key]
+                    square[c] = val[key];
                 }
-                console.log(obj)
-                this.squareScoreMap = obj
+                this.squareScoreMap = obj;
             },
             deep: true,
         },
@@ -233,73 +256,107 @@ export default {
          * @param s 宫格序号
          */
         getSquareScore(s) {
-            let square = this.squareScoreMap["s" + s]
-            let sum = 200
-            let scoreTextObj = {
-                tianShi: "天时:",
-                diLi: "地利:",
-                renHe: "人和:",
-                shenZhu: "神助:",
-                zs12: "长生十二宫:",
-                diPanGan: "天干作用:",
-            }
-            let textObj = {}
-            let trsz = ["tianShi", "renHe", "shenZhu"] // 天时 人和 神助直接计分
+            let square = this.squareScoreMap["s" + s];
+            let sum = 200;
+            let scoreTypeMap = {
+                tianShi: "天时",
+                diLi: "地利",
+                renHe: "人和",
+                shenZhu: "神助",
+                zs12: "长生十二宫",
+                diPanGan: "天干作用",
+                menPo: "门迫",
+            };
+            let rowMap = {};
+            let trsz = ["tianShi", "renHe", "shenZhu"]; // 天时 人和 神助直接计分
             for (let c in square) {
-                let value = square[c]
-                let num = 0
-                if (value && value.length) {
+                let value = square[c];
+                let num = 0;
+                if (
+                    (value && value.length) ||
+                    (typeof value === "boolean" && value)
+                ) {
                     if (trsz.includes(c)) {
-                        num = this[`${c}Map`][value]
-                        textObj[c] = value + "--" + num
+                        num = this[`${c}Map`][value];
+                        rowMap[c] = {
+                            type: scoreTypeMap[c],
+                            value,
+                            score: num,
+                            mean: "",
+                        };
                     }
                     if (c === "zs12") {
-                        let temp = this.zs12Map[value[0]]
-                        let last = value[1]
+                        let temp = this.zs12Map[value[0]];
+                        let last = value[1];
                         if (last) {
-                            temp += this.zs12Map[last]
+                            temp += this.zs12Map[last];
                         }
-                        num = temp / value.length // 取平均值
-                        textObj[c] = value.join("") + "--" + num
+                        num = temp / value.length; // 取平均值
+                        rowMap[c] = {
+                            type: scoreTypeMap[c],
+                            value: value.join(""),
+                            score: num,
+                            mean: "",
+                        };
                     }
                     // 天盘干
                     if (c === "sky") {
                         // 地利计算
-                        let squareType = this.squareTypeMap["s" + s] // 宫属性
-                        let skyGanType = this.getTianGanwuxing(value)
+                        let squareType = this.squareTypeMap["s" + s]; // 宫属性
+                        let skyGanType = this.getTianGanwuxing(value);
                         let rel = this.calcWxRelation(
                             skyGanType,
                             squareType,
                             "diLi"
-                        )
-                        num = rel.score
-                        textObj["diLi"] = rel.text + "--" + num
+                        );
+                        num = rel.score;
+                        rowMap["diLi"] = {
+                            type: scoreTypeMap["diLi"],
+                            value: rel.text.split("--")[0],
+                            score: num,
+                            mean: rel.text.split("--")[1],
+                        };
                         // 地盘干关系计算
-                        let earthGan = square["earth"]
+                        let earthGan = square["earth"];
                         if (earthGan) {
-                            let earthGanType = this.getTianGanwuxing(earthGan)
+                            let earthGanType = this.getTianGanwuxing(earthGan);
                             let rel = this.calcWxRelation(
                                 earthGanType,
                                 skyGanType,
                                 "diPanGan"
-                            )
-                            let _num = rel.score
-                            textObj["diPanGan"] = rel.text + "--" + _num
-                            num += _num
+                            );
+                            let _num = rel.score;
+                            rowMap["diPanGan"] = {
+                                type: scoreTypeMap["diPanGan"],
+                                value: rel.text,
+                                score: num,
+                                mean: "",
+                            };
+                            num += _num;
                         }
                     }
+                    // 门迫
+                    if (c === "menPo") {
+                        num = -30;
+                        rowMap[c] = {
+                            type: scoreTypeMap[c],
+                            value: "是",
+                            score: num,
+                            mean: "",
+                        };
+                    }
                 }
-                sum += num
+                sum += num;
             }
-            let text = "基础分:200\n"
-            for (let key in scoreTextObj) {
-                let str = textObj[key]
-                if (str) {
-                    text += scoreTextObj[key] + str + "\n"
+            let scoreTable = [{ type: "基础分", score: 200 }];
+            for (let key in scoreTypeMap) {
+                let row = rowMap[key];
+                if (row) {
+                    scoreTable.push(row);
                 }
             }
-            this.sumDetailObj[s] = text
-            return sum
+            this.sumDetailObj[s] = scoreTable;
+            return sum;
         },
         /**
          * 获取天干五行属性
@@ -316,31 +373,31 @@ export default {
                 "辛",
                 "壬",
                 "癸",
-            ]
-            let wuxing = ["木", "火", "土", "金", "水"]
-            let tgIdx = tiangan.indexOf(val)
+            ];
+            let wuxing = ["木", "火", "土", "金", "水"];
+            let tgIdx = tiangan.indexOf(val);
             let isEven = (num) => {
-                return num % 2 === 0
-            } // 判断偶数
+                return num % 2 === 0;
+            }; // 判断偶数
             if (isEven(tgIdx)) {
-                return wuxing[tgIdx / 2]
+                return wuxing[tgIdx / 2];
             } else {
-                return wuxing[(tgIdx - 1) / 2]
+                return wuxing[(tgIdx - 1) / 2];
             }
         },
         /**
          * 五行相生相克关系计算
          */
         calcWxRelation(self, other, type) {
-            let wuxingRaw = ["木", "火", "土", "金", "水"] // 初始五行
-            let selfIdx = wuxingRaw.indexOf(self)
+            let wuxingRaw = ["木", "火", "土", "金", "水"]; // 初始五行
+            let selfIdx = wuxingRaw.indexOf(self);
             let wuxing = [
                 ...wuxingRaw.slice(selfIdx),
                 ...wuxingRaw.slice(0, selfIdx),
-            ] // 以我为初始的五行循环
-            selfIdx = 0 // 我处于初始位置
-            let otherIdx = wuxing.indexOf(other)
-            let num = Math.abs(selfIdx - otherIdx)
+            ]; // 以我为初始的五行循环
+            selfIdx = 0; // 我处于初始位置
+            let otherIdx = wuxing.indexOf(other);
+            let num = Math.abs(selfIdx - otherIdx);
             if (type) {
                 // 地利计算
                 if (type === "diLi") {
@@ -350,27 +407,26 @@ export default {
                         2: { score: 10, text: "我克宫--努力有得(小吉)" },
                         3: { score: 0, text: "宫克我--多阻无成(大凶)" },
                         4: { score: 30, text: "宫生我--得地支助(大吉)" },
-                    }
-                    return map[num]
+                    };
+                    return map[num];
                 }
                 // 地盘天干作用计算
                 if (type === "diPanGan") {
-                    console.log(self, other)
                     let map = {
                         0: { score: 30, text: "地同天" },
                         1: { score: 30, text: "地生天" },
                         2: { score: 0, text: "地克天" },
                         3: { score: 20, text: "天克地" },
                         4: { score: 20, text: "天生地" },
-                    }
-                    return map[num]
+                    };
+                    return map[num];
                 }
             } else {
-                return num
+                return num;
             }
         },
     },
-}
+};
 </script>
 
 <style lang="less">
@@ -404,17 +460,17 @@ export default {
             }
         }
 
-        .el-input--suffix .el-input__inner {
-            padding-right: 30px;
+        .el-input__icon {
+            width: 22px;
         }
 
-        // &:nth-child(odd) {
-        //     background: #e0dfa7;
-        // }
+        .el-input__suffix {
+            right: 0px;
+        }
 
-        // &:nth-child(even) {
-        //     background: #a7e0a7;
-        // }
+        .el-input--suffix .el-input__inner {
+            padding-right: 25px;
+        }
 
         .cell {
             border-right: 1px solid #000;
@@ -445,7 +501,7 @@ export default {
     }
 
     .s2 {
-        background: #ffa07a;
+        background: #ffcee1;
     }
 
     .s3 {
@@ -517,6 +573,17 @@ export default {
             right: 10px;
             bottom: 10px;
             font-weight: 800;
+        }
+    }
+
+    .men-ct {
+        display: flex;
+        align-items: center;
+
+        i {
+            margin-left: 2px;
+            color: #007dff;
+            cursor: pointer;
         }
     }
 }
