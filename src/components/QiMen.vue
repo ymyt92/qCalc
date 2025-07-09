@@ -9,7 +9,7 @@
                             <el-table :data="sumDetailObj[s]" border stripe>
                                 <el-table-column label="类型" prop="type"></el-table-column>
                                 <el-table-column label="值" prop="value"></el-table-column>
-                                <el-table-column label="分数"prop="score"></el-table-column>
+                                <el-table-column label="分数" prop="score"></el-table-column>
                                 <el-table-column label="寓意" prop="mean" width="150"></el-table-column>
                             </el-table>
                             <i class="el-icon-view" slot="reference"></i>
@@ -19,10 +19,7 @@
                         <el-form-item>
                             <el-select v-model="qCalcForm[`s${s}_shenZhu`]" clearable>
                                 <el-option v-for="(value, key) in shenZhuMap" :key="key" :label="key" :value="key">
-                                    <span style="float: left" :class="{ red: value > 0 }">{{ key }}</span>
-                                    <span style="float: right">{{
-                                        value
-                                        }}</span>
+
                                 </el-option>
                             </el-select>
                         </el-form-item>
@@ -33,16 +30,12 @@
                         <el-form-item>
                             <el-select v-model="qCalcForm[`s${s}_tianShi`]" clearable>
                                 <el-option v-for="(value, key) in tianShiMap" :key="key" :label="key" :value="key">
-                                    <span style="float: left" :class="{ red: value > 0 }">{{ key }}</span>
-                                    <span style="float: right">{{
-                                        value
-                                        }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
                         <span class="square-type">{{
                             squareTypeMap["s" + s]
-                            }}</span>
+                        }}</span>
                     </div>
                     <div class="cell c6">
                         <el-form-item>
@@ -53,8 +46,8 @@
                                     <span :class="{
                                         red: zs12Map[data.label] > 0,
                                     }">&nbsp;&nbsp;{{
-                                            zs12Map[data.label]
-                                        }}</span>
+                                        zs12Map[data.label]
+                                    }}</span>
                                 </template>
                             </el-cascader>
                         </el-form-item>
@@ -64,38 +57,20 @@
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                        }}</span>
+                                    }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
                     </div>
                     <div class="cell c7"></div>
                     <div class="cell c8">
-                        <div class="men-ct">
-                            <el-form-item :class="{ red: qCalcForm[`s${s}_menPo`] }">
-                                <el-select v-model="qCalcForm[`s${s}_renHe`]" clearable
-                                    @clear="qCalcForm[`s${s}_menPo`] = false">
-                                    <el-option v-for="(value, key) in renHeMap" :key="key" :label="key" :value="key">
-                                        <span style="float: left">{{
-                                            key
-                                            }}</span>
-                                        <span style="float: right">{{
-                                            value
-                                            }}</span>
-                                    </el-option>
-                                </el-select>
-                            </el-form-item>
-                            <el-popover v-if="qCalcForm[`s${s}_renHe`]" placement="right" trigger="click">
-                                <p style="
-                                        font-weight: 500;
-                                        margin-bottom: 10px;
-                                    ">
-                                    门迫
-                                </p>
-                                <el-switch v-model="qCalcForm[`s${s}_menPo`]"></el-switch>
-                                <i slot="reference" class="el-icon-menu"></i>
-                            </el-popover>
-                        </div>
+                        <el-form-item :class="{ red: menPoMap['s' + s].includes(qCalcForm[`s${s}_renHe`]) }">
+                            <el-select v-model="qCalcForm[`s${s}_renHe`]" clearable>
+                                <el-option :class="{ red: menPoMap['s' + s].includes(key) }"
+                                    v-for="(value, key) in renHeMap" :key="key" :label="key" :value="key">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
                     </div>
                     <div class="cell c9">
                         <el-form-item>
@@ -104,7 +79,7 @@
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                        }}</span>
+                                    }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
@@ -121,6 +96,7 @@ export default {
         return {
             qCalcForm: {},
             squareScoreMap: {},
+            sumDetailObj: {},
             // 神助计分
             shenZhuMap: {
                 值符: 20,
@@ -201,7 +177,16 @@ export default {
                 s8: "水",
                 s9: "金",
             },
-            sumDetailObj: {},
+            menPoMap: {
+                s1: ["开门", "惊门"],
+                s2: ["休门"],
+                s3: ["伤门", "杜门"],
+                s4: ["开门", "惊门"],
+                s6: ["景门"],
+                s7: ["伤门", "杜门"],
+                s8: ["生门", "死门"],
+                s9: ["景门"],
+            }
         };
     },
     computed: {
@@ -284,6 +269,18 @@ export default {
                             score: num,
                             mean: "",
                         };
+                        if (c === "renHe") {
+                            // 门迫
+                            if (this.menPoMap["s" + s].includes(value)) {
+                                rowMap["menPo"] = {
+                                    type: scoreTypeMap["menPo"],
+                                    value: "门克宫",
+                                    score: -30,
+                                    mean: "",
+                                };
+                                num += -30
+                            }
+                        }
                     }
                     if (c === "zs12") {
                         let temp = this.zs12Map[value[0]];
@@ -335,17 +332,8 @@ export default {
                             num += _num;
                         }
                     }
-                    // 门迫
-                    if (c === "menPo") {
-                        num = -30;
-                        rowMap[c] = {
-                            type: scoreTypeMap[c],
-                            value: "是",
-                            score: num,
-                            mean: "",
-                        };
-                    }
                 }
+                
                 sum += num;
             }
             let scoreTable = [{ type: "基础分", score: 200 }];
