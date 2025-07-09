@@ -1,5 +1,5 @@
 <template>
-    <el-form size="mini" :model="qCalcForm">
+    <el-form size="mini" :model="qCalcForm" label-position="left">
         <div class="qCalc">
             <div v-for="s in 9" :class="['square', 's' + s]">
                 <template v-if="s !== 5">
@@ -19,12 +19,35 @@
                         <el-form-item>
                             <el-select v-model="qCalcForm[`s${s}_shenZhu`]" clearable>
                                 <el-option v-for="(value, key) in shenZhuMap" :key="key" :label="key" :value="key">
-
                                 </el-option>
                             </el-select>
                         </el-form-item>
                     </div>
-                    <div class="cell c3"></div>
+                    <div class="cell c3">
+                        <div class="circle" v-show="qCalcForm[`s${s}_kongWang`]"></div>
+                        <el-popover placement="bottom" title="配置" width="200" trigger="click" :append-to-body="false">
+                            <el-form-item v-if="s === 3" label="遁甲" label-width="40px">
+                                <el-select size="mini" v-model="dunjia" clearable @change="setDunjia">
+                                    <el-option v-for="val in [
+                                        '戊',
+                                        '己',
+                                        '庚',
+                                        '辛',
+                                        '壬',
+                                        '癸',
+                                    ]" :key="val" :label="val" :value="val">
+                                    </el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="空亡">
+                                <el-radio-group v-model="qCalcForm[`s${s}_kongWang`]">
+                                    <el-radio :label="true">是</el-radio>
+                                    <el-radio :label="undefined">否</el-radio>
+                                </el-radio-group>
+                            </el-form-item>
+                            <i class="hai-setting el-icon-setting" slot="reference"></i>
+                        </el-popover>
+                    </div>
                     <div class="cell c4"></div>
                     <div class="cell c5">
                         <el-form-item>
@@ -51,12 +74,10 @@
                                 </template>
                             </el-cascader>
                         </el-form-item>
-                        <el-form-item
-                            :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(qCalcForm[`s${s}_sky`]) }">
+                        <el-form-item :class="getTianGanColor(s, qCalcForm[`s${s}_sky`])">
                             <el-select v-model="qCalcForm[`s${s}_sky`]" clearable>
                                 <el-option v-for="(value, key) in tianganMap" :key="key"
-                                    :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(key) }"
-                                    :label="key" :value="key">
+                                    :class="getTianGanColor(s, key)" :label="key" :value="key">
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
@@ -67,21 +88,25 @@
                     </div>
                     <div class="cell c7"></div>
                     <div class="cell c8">
-                        <el-form-item :class="{ red: menPoMap['s' + s].includes(qCalcForm[`s${s}_renHe`]) }">
+                        <el-form-item :class="{
+                            red: menPoMap['s' + s].includes(
+                                qCalcForm[`s${s}_renHe`]
+                            ),
+                        }">
                             <el-select v-model="qCalcForm[`s${s}_renHe`]" clearable>
-                                <el-option v-for="(value, key) in renHeMap" :key="key"
-                                    :class="{ red: menPoMap['s' + s].includes(key) }" :label="key" :value="key">
+                                <el-option v-for="(value, key) in renHeMap" :key="key" :class="{
+                                    red: menPoMap['s' + s].includes(key),
+                                }" :label="key" :value="key">
                                 </el-option>
                             </el-select>
                         </el-form-item>
                     </div>
                     <div class="cell c9">
-                        <el-form-item
-                            :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(qCalcForm[`s${s}_earth`]) }">
+                        <el-form-item :class="getTianGanColor(s, qCalcForm[`s${s}_earth`])
+                            ">
                             <el-select v-model="qCalcForm[`s${s}_earth`]" clearable>
                                 <el-option v-for="(value, key) in tianganMap" :key="key"
-                                    :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(key) }"
-                                    :label="key" :value="key">
+                                    :class="getTianGanColor(s, key)" :label="key" :value="key">
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
@@ -199,50 +224,58 @@ export default {
                 s3: ["己"],
                 s4: ["戊"],
                 s7: ["庚"],
-            }
-        };
+            },
+            ruMuMap: {
+                s1: ["壬", "辛"],
+                s3: ["甲", "癸"],
+                s7: ["丁", "己", "庚"],
+                s9: ["乙", "丙", "戊"],
+            },
+            xjmMap: {
+                s1: ["壬"],
+                s7: ["庚"],
+            },
+            dunjia: "",
+        }
     },
     computed: {
         // 12周期级联选择
         zs12Casc() {
-            let arr = Object.keys(this.zs12Map);
+            let arr = Object.keys(this.zs12Map)
             let casc = arr.map((val, index) => {
-                let children = [
-                    ...arr.slice(0, index),
-                    ...arr.slice(index + 1),
-                ]; // 除去本身
+                let children = [...arr.slice(0, index), ...arr.slice(index + 1)] // 除去本身
                 children = children.map((item) => {
                     return {
                         label: item,
                         value: item,
-                    };
-                });
+                    }
+                })
                 let obj = {
                     label: val,
                     value: val,
                     children,
-                };
-                return obj;
-            });
-            return casc;
+                }
+                return obj
+            })
+            return casc
         },
     },
     watch: {
         qCalcForm: {
             handler(val) {
-                let obj = {};
+                let obj = {}
                 for (let key in val) {
-                    let arr = key.split("_");
-                    let s = arr[0];
-                    let c = arr[1];
-                    let square = obj[s];
+                    let arr = key.split("_")
+                    let s = arr[0]
+                    let c = arr[1]
+                    let square = obj[s]
                     if (!square) {
-                        obj[s] = {};
-                        square = obj[s];
+                        obj[s] = {}
+                        square = obj[s]
                     }
-                    square[c] = val[key];
+                    square[c] = val[key]
                 }
-                this.squareScoreMap = obj;
+                this.squareScoreMap = obj
             },
             deep: true,
         },
@@ -255,8 +288,8 @@ export default {
          */
         getSquareScore(s) {
             let sIdx = "s" + s
-            let square = this.squareScoreMap[sIdx];
-            let sum = 200;
+            let square = this.squareScoreMap[sIdx]
+            let sum = 200
             let scoreTypeMap = {
                 tianShi: "天时",
                 diLi: "地利",
@@ -266,24 +299,23 @@ export default {
                 diPanGan: "天干作用",
                 menPo: "门迫",
                 jiXing: "击刑",
-            };
-            let rowMap = {};
-            let trsz = ["tianShi", "renHe", "shenZhu"]; // 天时 人和 神助直接计分
+                ruMu: "入墓",
+                kongWang: "空亡",
+            }
+            let rowMap = {}
+            let trsz = ["tianShi", "renHe", "shenZhu"] // 天时 人和 神助直接计分
             for (let c in square) {
-                let value = square[c];
-                let num = 0;
-                if (
-                    (value && value.length) ||
-                    (typeof value === "boolean" && value)
-                ) {
+                let value = square[c]
+                let num = 0
+                if ((value && value.length) || value == true) {
                     if (trsz.includes(c)) {
-                        num = this[`${c}Map`][value];
+                        num = this[`${c}Map`][value]
                         rowMap[c] = {
                             type: scoreTypeMap[c],
                             value,
                             score: num,
                             mean: "",
-                        };
+                        }
                         if (c === "renHe") {
                             // 门迫
                             if (this.menPoMap[sIdx].includes(value)) {
@@ -292,60 +324,60 @@ export default {
                                     value: "门克宫",
                                     score: -20,
                                     mean: "",
-                                };
+                                }
                                 num += -20
                             }
                         }
                     }
                     if (c === "zs12") {
-                        let temp = this.zs12Map[value[0]];
-                        let last = value[1];
+                        let temp = this.zs12Map[value[0]]
+                        let last = value[1]
                         if (last) {
-                            temp += this.zs12Map[last];
+                            temp += this.zs12Map[last]
                         }
-                        num = temp / value.length; // 取平均值
+                        num = temp / value.length // 取平均值
                         rowMap[c] = {
                             type: scoreTypeMap[c],
                             value: value.join(""),
                             score: num,
                             mean: "",
-                        };
+                        }
                     }
                     // 天盘干
                     if (c === "sky") {
                         // 地利计算
-                        let squareType = this.squareTypeMap[sIdx]; // 宫属性
-                        let skyGanType = this.getTianGanwuxing(value);
+                        let squareType = this.squareTypeMap[sIdx] // 宫属性
+                        let skyGanType = this.getTianGanwuxing(value)
                         let rel = this.calcWxRelation(
                             skyGanType,
                             squareType,
                             "diLi"
-                        );
-                        num = rel.score;
+                        )
+                        num = rel.score
                         rowMap["diLi"] = {
                             type: scoreTypeMap["diLi"],
                             value: rel.text.split("--")[0],
                             score: num,
                             mean: rel.text.split("--")[1],
-                        };
+                        }
 
                         // 地盘干关系计算
-                        let earthGan = square["earth"];
+                        let earthGan = square["earth"]
                         if (earthGan) {
-                            let earthGanType = this.getTianGanwuxing(earthGan);
+                            let earthGanType = this.getTianGanwuxing(earthGan)
                             let rel = this.calcWxRelation(
                                 earthGanType,
                                 skyGanType,
                                 "diPanGan"
-                            );
-                            let _num = rel.score;
+                            )
+                            let _num = rel.score
                             rowMap["diPanGan"] = {
                                 type: scoreTypeMap["diPanGan"],
                                 value: rel.text,
                                 score: num,
                                 mean: "",
-                            };
-                            num += _num;
+                            }
+                            num += _num
                         }
                         // 击刑计算
                         if (this.jiXingMap[sIdx]) {
@@ -354,41 +386,82 @@ export default {
                             if (skyJx) {
                                 rowMap["jiXing"] = {
                                     type: scoreTypeMap["jiXing"],
-                                    value: '天盘干击刑',
+                                    value: "天盘干击刑",
                                     score: -20,
                                     mean: "",
-                                };
+                                }
                                 num += -20
                             } else {
                                 // 只有地盘干击刑
                                 if (earthGan) {
-                                    let earthJx = this.jiXingMap[sIdx].includes(earthGan)
+                                    let earthJx =
+                                        this.jiXingMap[sIdx].includes(earthGan)
                                     if (earthJx) {
                                         rowMap["jiXing"] = {
                                             type: scoreTypeMap["jiXing"],
-                                            value: '地盘干击刑',
+                                            value: "地盘干击刑",
                                             score: -10,
                                             mean: "",
-                                        };
+                                        }
                                         num += -10
                                     }
                                 }
                             }
                         }
+
+                        // 击刑计算
+                        if (this.ruMuMap[sIdx]) {
+                            let skyRm = false // 天盘干入墓
+                            skyRm = this.ruMuMap[sIdx].includes(value)
+                            if (skyRm) {
+                                rowMap["ruMu"] = {
+                                    type: scoreTypeMap["ruMu"],
+                                    value: "天盘干入墓",
+                                    score: -30,
+                                    mean: "",
+                                }
+                                num += -30
+                            } else {
+                                // 只有地盘干入墓
+                                if (earthGan) {
+                                    let earthRm =
+                                        this.ruMuMap[sIdx].includes(earthGan)
+                                    if (earthRm) {
+                                        rowMap["ruMu"] = {
+                                            type: scoreTypeMap["ruMu"],
+                                            value: "地盘干入墓",
+                                            score: -15,
+                                            mean: "",
+                                        }
+                                        num += -15
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // 空亡
+                    if (c === "kongWang") {
+                        rowMap["kongWang"] = {
+                            type: scoreTypeMap["kongWang"],
+                            value: "是",
+                            score: -30,
+                            mean: "",
+                        }
+                        num += -30
                     }
                 }
 
-                sum += num;
+                sum += num
             }
-            let scoreTable = [{ type: "基础分", score: 200 }];
+            let scoreTable = [{ type: "基础分", score: 200 }]
             for (let key in scoreTypeMap) {
-                let row = rowMap[key];
+                let row = rowMap[key]
                 if (row) {
-                    scoreTable.push(row);
+                    scoreTable.push(row)
                 }
             }
-            this.sumDetailObj[s] = scoreTable;
-            return sum;
+            this.sumDetailObj[s] = scoreTable
+            return sum
         },
         /**
          * 获取天干五行属性
@@ -405,31 +478,31 @@ export default {
                 "辛",
                 "壬",
                 "癸",
-            ];
-            let wuxing = ["木", "火", "土", "金", "水"];
-            let tgIdx = tiangan.indexOf(val);
+            ]
+            let wuxing = ["木", "火", "土", "金", "水"]
+            let tgIdx = tiangan.indexOf(val)
             let isEven = (num) => {
-                return num % 2 === 0;
-            }; // 判断偶数
+                return num % 2 === 0
+            } // 判断偶数
             if (isEven(tgIdx)) {
-                return wuxing[tgIdx / 2];
+                return wuxing[tgIdx / 2]
             } else {
-                return wuxing[(tgIdx - 1) / 2];
+                return wuxing[(tgIdx - 1) / 2]
             }
         },
         /**
          * 五行相生相克关系计算
          */
         calcWxRelation(self, other, type) {
-            let wuxingRaw = ["木", "火", "土", "金", "水"]; // 初始五行
-            let selfIdx = wuxingRaw.indexOf(self);
+            let wuxingRaw = ["木", "火", "土", "金", "水"] // 初始五行
+            let selfIdx = wuxingRaw.indexOf(self)
             let wuxing = [
                 ...wuxingRaw.slice(selfIdx),
                 ...wuxingRaw.slice(0, selfIdx),
-            ]; // 以我为初始的五行循环
-            selfIdx = 0; // 我处于初始位置
-            let otherIdx = wuxing.indexOf(other);
-            let num = Math.abs(selfIdx - otherIdx);
+            ] // 以我为初始的五行循环
+            selfIdx = 0 // 我处于初始位置
+            let otherIdx = wuxing.indexOf(other)
+            let num = Math.abs(selfIdx - otherIdx)
             if (type) {
                 // 地利计算
                 if (type === "diLi") {
@@ -439,8 +512,8 @@ export default {
                         2: { score: 10, text: "我克宫--努力有得(小吉)" },
                         3: { score: 0, text: "宫克我--多阻无成(大凶)" },
                         4: { score: 30, text: "宫生我--得地支助(大吉)" },
-                    };
-                    return map[num];
+                    }
+                    return map[num]
                 }
                 // 地盘天干作用计算
                 if (type === "diPanGan") {
@@ -450,15 +523,60 @@ export default {
                         2: { score: 0, text: "地克天" },
                         3: { score: 20, text: "天克地" },
                         4: { score: 20, text: "天生地" },
-                    };
-                    return map[num];
+                    }
+                    return map[num]
                 }
             } else {
-                return num;
+                return num
+            }
+        },
+        /**
+         * 获取天干害颜色
+         * @param s 宫格序号
+         */
+        getTianGanColor(s, val) {
+            if (!val) {
+                return ""
+            }
+            let sIdx = "s" + s
+            let maps = [this.xjmMap, this.jiXingMap, this.ruMuMap]
+            let obj = maps.find((item) => {
+                let isHai = false
+                if (item[sIdx] && item[sIdx].includes(val)) {
+                    isHai = true
+                }
+                return isHai
+            })
+            if (obj) {
+                // 首先判断是否判断击刑或者入墓
+                let idx = maps.indexOf(obj)
+                let colors = {
+                    0: "blue",
+                    1: "purple",
+                    2: "green",
+                }
+                return colors[idx]
+            } else {
+                return ""
+            }
+        },
+        setDunjia(val) {
+            if (this.xjmMap.s3) {
+                delete this.xjmMap.s3
+            }
+            if (val) {
+                if (!this.ruMuMap.s3.includes(val)) {
+                    this.ruMuMap.s3.push(val)
+                }
+                if ((val = "己")) {
+                    this.xjmMap.s3 = ["己"]
+                }
+            } else {
+                this.ruMuMap.s3 = ["甲", "癸"]
             }
         },
     },
-};
+}
 </script>
 
 <style lang="less">
@@ -608,14 +726,23 @@ export default {
         }
     }
 
-    .men-ct {
-        display: flex;
-        align-items: center;
+    .c3 {
+        position: relative;
 
-        i {
-            margin-left: 2px;
+        .hai-setting {
             color: #007dff;
             cursor: pointer;
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+        }
+
+        .circle {
+            height: 40px;
+            width: 40px;
+            border: 1px solid #000;
+            border-radius: 50%;
+            background: #fff;
         }
     }
 }
@@ -629,8 +756,21 @@ export default {
     padding: 0 10px !important;
 }
 
+.el-cascader-menu__wrap {
+    height: fit-content !important;
+}
+
+.el-scrollbar__wrap {
+    height: fit-content !important;
+}
+
+.el-select-dropdown__wrap {
+    max-height: unset !important;
+}
+
 .red {
     color: red !important;
+    font-weight: 500;
 
     .el-input__inner {
         color: red !important;
@@ -639,9 +779,28 @@ export default {
 
 .purple {
     color: #d018d0 !important;
+    font-weight: 500;
 
     .el-input__inner {
         color: #d018d0 !important;
+    }
+}
+
+.green {
+    color: green !important;
+    font-weight: 500;
+
+    .el-input__inner {
+        color: green !important;
+    }
+}
+
+.blue {
+    color: blue !important;
+    font-weight: 500;
+
+    .el-input__inner {
+        color: blue !important;
     }
 }
 </style>
