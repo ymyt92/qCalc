@@ -51,9 +51,12 @@
                                 </template>
                             </el-cascader>
                         </el-form-item>
-                        <el-form-item>
+                        <el-form-item
+                            :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(qCalcForm[`s${s}_sky`]) }">
                             <el-select v-model="qCalcForm[`s${s}_sky`]" clearable>
-                                <el-option v-for="(value, key) in tianganMap" :key="key" :label="key" :value="key">
+                                <el-option v-for="(value, key) in tianganMap" :key="key"
+                                    :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(key) }"
+                                    :label="key" :value="key">
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
@@ -66,16 +69,19 @@
                     <div class="cell c8">
                         <el-form-item :class="{ red: menPoMap['s' + s].includes(qCalcForm[`s${s}_renHe`]) }">
                             <el-select v-model="qCalcForm[`s${s}_renHe`]" clearable>
-                                <el-option :class="{ red: menPoMap['s' + s].includes(key) }"
-                                    v-for="(value, key) in renHeMap" :key="key" :label="key" :value="key">
+                                <el-option v-for="(value, key) in renHeMap" :key="key"
+                                    :class="{ red: menPoMap['s' + s].includes(key) }" :label="key" :value="key">
                                 </el-option>
                             </el-select>
                         </el-form-item>
                     </div>
                     <div class="cell c9">
-                        <el-form-item>
+                        <el-form-item
+                            :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(qCalcForm[`s${s}_earth`]) }">
                             <el-select v-model="qCalcForm[`s${s}_earth`]" clearable>
-                                <el-option v-for="(value, key) in tianganMap" :key="key" :label="key" :value="key">
+                                <el-option v-for="(value, key) in tianganMap" :key="key"
+                                    :class="{ purple: jiXingMap['s' + s] && jiXingMap['s' + s].includes(key) }"
+                                    :label="key" :value="key">
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
@@ -186,6 +192,13 @@ export default {
                 s7: ["伤门", "杜门"],
                 s8: ["生门", "死门"],
                 s9: ["景门"],
+            },
+            jiXingMap: {
+                s1: ["壬", "癸"],
+                s2: ["辛"],
+                s3: ["己"],
+                s4: ["戊"],
+                s7: ["庚"],
             }
         };
     },
@@ -241,7 +254,8 @@ export default {
          * @param s 宫格序号
          */
         getSquareScore(s) {
-            let square = this.squareScoreMap["s" + s];
+            let sIdx = "s" + s
+            let square = this.squareScoreMap[sIdx];
             let sum = 200;
             let scoreTypeMap = {
                 tianShi: "天时",
@@ -251,6 +265,7 @@ export default {
                 zs12: "长生十二宫",
                 diPanGan: "天干作用",
                 menPo: "门迫",
+                jiXing: "击刑",
             };
             let rowMap = {};
             let trsz = ["tianShi", "renHe", "shenZhu"]; // 天时 人和 神助直接计分
@@ -271,14 +286,14 @@ export default {
                         };
                         if (c === "renHe") {
                             // 门迫
-                            if (this.menPoMap["s" + s].includes(value)) {
+                            if (this.menPoMap[sIdx].includes(value)) {
                                 rowMap["menPo"] = {
                                     type: scoreTypeMap["menPo"],
                                     value: "门克宫",
-                                    score: -30,
+                                    score: -20,
                                     mean: "",
                                 };
-                                num += -30
+                                num += -20
                             }
                         }
                     }
@@ -299,7 +314,7 @@ export default {
                     // 天盘干
                     if (c === "sky") {
                         // 地利计算
-                        let squareType = this.squareTypeMap["s" + s]; // 宫属性
+                        let squareType = this.squareTypeMap[sIdx]; // 宫属性
                         let skyGanType = this.getTianGanwuxing(value);
                         let rel = this.calcWxRelation(
                             skyGanType,
@@ -313,6 +328,7 @@ export default {
                             score: num,
                             mean: rel.text.split("--")[1],
                         };
+
                         // 地盘干关系计算
                         let earthGan = square["earth"];
                         if (earthGan) {
@@ -331,9 +347,37 @@ export default {
                             };
                             num += _num;
                         }
+                        // 击刑计算
+                        if (this.jiXingMap[sIdx]) {
+                            let skyJx = false // 天盘干击刑
+                            skyJx = this.jiXingMap[sIdx].includes(value)
+                            if (skyJx) {
+                                rowMap["jiXing"] = {
+                                    type: scoreTypeMap["jiXing"],
+                                    value: '天盘干击刑',
+                                    score: -20,
+                                    mean: "",
+                                };
+                                num += -20
+                            } else {
+                                // 只有地盘干击刑
+                                if (earthGan) {
+                                    let earthJx = this.jiXingMap[sIdx].includes(earthGan)
+                                    if (earthJx) {
+                                        rowMap["jiXing"] = {
+                                            type: scoreTypeMap["jiXing"],
+                                            value: '地盘干击刑',
+                                            score: -10,
+                                            mean: "",
+                                        };
+                                        num += -10
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-                
+
                 sum += num;
             }
             let scoreTable = [{ type: "基础分", score: 200 }];
@@ -590,6 +634,14 @@ export default {
 
     .el-input__inner {
         color: red !important;
+    }
+}
+
+.purple {
+    color: #d018d0 !important;
+
+    .el-input__inner {
+        color: #d018d0 !important;
     }
 }
 </style>
