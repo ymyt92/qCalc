@@ -5,12 +5,12 @@
                 <template v-if="s !== 5">
                     <div class="cell c1">
                         <p class="sum">{{ getSquareScore(s) }}</p>
-                        <el-popover placement="right-end" title="计分详情" width="450" trigger="click">
+                        <el-popover placement="right-end" title="计分详情" width="480" trigger="click">
                             <el-table :data="sumDetailObj[s]" border stripe>
                                 <el-table-column label="类型" prop="type"></el-table-column>
                                 <el-table-column label="值" prop="value"></el-table-column>
                                 <el-table-column label="分数" prop="score"></el-table-column>
-                                <el-table-column label="寓意" prop="mean" width="150"></el-table-column>
+                                <el-table-column label="备注" prop="mean" width="180"></el-table-column>
                             </el-table>
                             <i class="el-icon-view" slot="reference"></i>
                         </el-popover>
@@ -57,8 +57,8 @@
                             </el-select>
                         </el-form-item>
                         <span class="square-type">{{
-                            squareTypeMap["s" + s]
-                        }}</span>
+                            squareNameMap["s" + s]
+                            }}</span>
                     </div>
                     <div class="cell c6">
                         <el-form-item>
@@ -70,7 +70,7 @@
                                         red: zs12Map[data.label] > 0,
                                     }">&nbsp;&nbsp;{{
                                         zs12Map[data.label]
-                                    }}</span>
+                                        }}</span>
                                 </template>
                             </el-cascader>
                         </el-form-item>
@@ -81,7 +81,7 @@
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                    }}</span>
+                                        }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
@@ -110,7 +110,7 @@
                                     <span style="float: left">{{ key }}</span>
                                     <span style="float: right">{{
                                         value
-                                    }}</span>
+                                        }}</span>
                                 </el-option>
                             </el-select>
                         </el-form-item>
@@ -130,37 +130,37 @@ export default {
             sumDetailObj: {},
             // 神助计分
             shenZhuMap: {
-                值符: 20,
-                太阴: 20,
-                六合: 20,
-                九天: 20,
-                腾蛇: 0,
-                白虎: 0,
-                玄武: 0,
-                九地: 0,
+                值符: { mean: "吉神", score: 20 },
+                太阴: { mean: "吉神", score: 20 },
+                六合: { mean: "吉神", score: 20 },
+                九天: { mean: "吉神", score: 20 },
+                腾蛇: { mean: "凶神", score: 0 },
+                白虎: { mean: "凶神", score: 0 },
+                玄武: { mean: "凶神", score: 0 },
+                九地: { mean: "吉神", score: 0 },
             },
             // 天时计分
             tianShiMap: {
-                天任星: 20,
-                天冲星: 20,
-                天辅星: 20,
-                天心星: 20,
-                天禽星: 20,
-                天蓬星: 0,
-                天英星: 0,
-                天芮星: 0,
-                天柱星: 0,
+                天任星: { mean: "吉星", score: 20 },
+                天冲星: { mean: "吉星", score: 20 },
+                天辅星: { mean: "吉星", score: 20 },
+                天心星: { mean: "吉星", score: 20 },
+                天禽星: { mean: "吉星", score: 20 },
+                天蓬星: { mean: "凶星", score: 0 },
+                天英星: { mean: "凶星", score: 0 },
+                天芮星: { mean: "凶星", score: 0 },
+                天柱星: { mean: "凶星", score: 0 },
             },
             // 人和计分
             renHeMap: {
-                休门: 30,
-                生门: 30,
-                开门: 30,
-                杜门: 0,
-                景门: 0,
-                死门: 0,
-                惊门: 0,
-                伤门: 0,
+                休门: { mean: "吉门", score: 30 },
+                生门: { mean: "吉门", score: 30 },
+                开门: { mean: "吉门", score: 30 },
+                杜门: { mean: "平门", score: 0 },
+                景门: { mean: "平门", score: 0 },
+                死门: { mean: "凶门", score: 0 },
+                惊门: { mean: "凶门", score: 0 },
+                伤门: { mean: "凶门", score: 0 },
             },
             tianganMap: {
                 甲: "阳木",
@@ -189,12 +189,7 @@ export default {
                 胎: 10,
                 养: 10,
             },
-            cellCalcMap: {
-                c2: "shenZhuMap",
-                c5: "tianShiMap",
-                c6: "zs12Map",
-                c8: "renHeMap",
-            },
+
             wuxing: ["木", "火", "土", "金", "水"],
             // 九宫格五行属性
             squareTypeMap: {
@@ -207,6 +202,18 @@ export default {
                 s7: "土",
                 s8: "水",
                 s9: "金",
+            },
+            // 九宫格名称
+            squareNameMap: {
+                s1: "巽",
+                s2: "离",
+                s3: "坤",
+                s4: "震",
+                s5: "中",
+                s6: "兑",
+                s7: "艮",
+                s8: "艮",
+                s9: "乾",
             },
             menPoMap: {
                 s1: ["开门", "惊门"],
@@ -303,30 +310,45 @@ export default {
                 kongWang: "空亡",
             }
             let rowMap = {}
-            let trsz = ["tianShi", "renHe", "shenZhu"] // 天时 人和 神助直接计分
             for (let c in square) {
                 let value = square[c]
                 let num = 0
                 if ((value && value.length) || value == true) {
-                    if (trsz.includes(c)) {
-                        num = this[`${c}Map`][value]
+                    if (c === "tianShi") {
+                        num = this.tianShiMap[value].score
                         rowMap[c] = {
                             type: scoreTypeMap[c],
                             value,
                             score: num,
-                            mean: "",
+                            mean: this.tianShiMap[value].mean,
                         }
-                        if (c === "renHe") {
-                            // 门迫
-                            if (this.menPoMap[sIdx].includes(value)) {
-                                rowMap["menPo"] = {
-                                    type: scoreTypeMap["menPo"],
-                                    value: "门克宫",
-                                    score: -20,
-                                    mean: "",
-                                }
-                                num += -20
+                    }
+                    if (c === "renHe") {
+                        num = this.renHeMap[value].score
+                        rowMap[c] = {
+                            type: scoreTypeMap[c],
+                            value,
+                            score: num,
+                            mean: this.renHeMap[value].mean,
+                        }
+                        // 门迫
+                        if (this.menPoMap[sIdx].includes(value)) {
+                            rowMap["menPo"] = {
+                                type: scoreTypeMap["menPo"],
+                                value: `${value}在${this.squareNameMap[sIdx]}宫`,
+                                score: -20,
+                                mean: "门克宫",
                             }
+                            num += -20
+                        }
+                    }
+                    if (c === "shenZhu") {
+                        num = this.shenZhuMap[value].score
+                        rowMap[c] = {
+                            type: scoreTypeMap[c],
+                            value,
+                            score: num,
+                            mean: this.shenZhuMap[value].mean,
                         }
                     }
                     if (c === "zs12") {
@@ -356,9 +378,9 @@ export default {
                         num = rel.score
                         rowMap["diLi"] = {
                             type: scoreTypeMap["diLi"],
-                            value: rel.text.split("--")[0],
+                            value: `我:${skyGanType},宫:${squareType}`,
                             score: num,
-                            mean: rel.text.split("--")[1],
+                            mean: rel.text,
                         }
 
                         // 地盘干关系计算
@@ -373,9 +395,9 @@ export default {
                             let _num = rel.score
                             rowMap["diPanGan"] = {
                                 type: scoreTypeMap["diPanGan"],
-                                value: rel.text,
+                                value: `天:${skyGanType},地:${earthGanType}`,
                                 score: num,
-                                mean: "",
+                                mean: rel.text,
                             }
                             num += _num
                         }
@@ -386,9 +408,9 @@ export default {
                             if (skyJx) {
                                 rowMap["jiXing"] = {
                                     type: scoreTypeMap["jiXing"],
-                                    value: "天盘干击刑",
+                                    value: `${value}在${this.squareNameMap[sIdx]}宫`,
                                     score: -20,
-                                    mean: "",
+                                    mean: "天盘干击刑",
                                 }
                                 num += -20
                             } else {
@@ -399,9 +421,9 @@ export default {
                                     if (earthJx) {
                                         rowMap["jiXing"] = {
                                             type: scoreTypeMap["jiXing"],
-                                            value: "地盘干击刑",
+                                            value: `${earthGan}在${this.squareNameMap[sIdx]}宫`,
                                             score: -10,
-                                            mean: "",
+                                            mean: "地盘干击刑",
                                         }
                                         num += -10
                                     }
@@ -409,16 +431,22 @@ export default {
                             }
                         }
 
-                        // 击刑计算
+                        // 入墓计算
                         if (this.ruMuMap[sIdx]) {
                             let skyRm = false // 天盘干入墓
                             skyRm = this.ruMuMap[sIdx].includes(value)
                             if (skyRm) {
                                 rowMap["ruMu"] = {
                                     type: scoreTypeMap["ruMu"],
-                                    value: "天盘干入墓",
+                                    value: `${value}在${this.squareNameMap[sIdx]}宫`,
                                     score: -30,
-                                    mean: "",
+                                    mean: "天盘干入墓",
+                                }
+                                // 坤宫入墓
+                                if (s === 3) {
+                                    if (this.dunjia) {
+                                        rowMap["ruMu"].mean += `(遁甲:${this.dunjia})`
+                                    }
                                 }
                                 num += -30
                             } else {
@@ -429,9 +457,15 @@ export default {
                                     if (earthRm) {
                                         rowMap["ruMu"] = {
                                             type: scoreTypeMap["ruMu"],
-                                            value: "地盘干入墓",
+                                            value: `${earthGan}在${this.squareNameMap[sIdx]}宫`,
                                             score: -15,
-                                            mean: "",
+                                            mean: "地盘干入墓",
+                                        }
+                                        // 坤宫入墓
+                                        if (s === 3) {
+                                            if (this.dunjia) {
+                                                rowMap["ruMu"].mean += `(遁甲:${this.dunjia})`
+                                            }
                                         }
                                         num += -15
                                     }
@@ -566,9 +600,9 @@ export default {
             }
             if (val) {
                 if (!this.ruMuMap.s3.includes(val)) {
-                    this.ruMuMap.s3.push(val)
+                    this.ruMuMap.s3 = ["甲", "癸", val]
                 }
-                if ((val = "己")) {
+                if (val === "己") {
                     this.xjmMap.s3 = ["己"]
                 }
             } else {
@@ -596,15 +630,27 @@ export default {
         grid-template-rows: repeat(3, 1fr);
         position: relative;
 
+        .el-input {
+            i {
+                color: #88898b;
+            }
+        }
+
+        .el-input__suffix {
+            color: #88898b;
+        }
+
         .el-input__inner {
-            background-color: #f0f9eb;
+            background-color: unset;
             color: #000;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 500;
             text-align: center;
             padding: 0 10px;
+            border: none;
 
             &::placeholder {
+                color: #88898b;
                 font-size: 13px;
                 font-weight: normal;
             }
@@ -754,6 +800,11 @@ export default {
 
 .el-select-dropdown__item {
     padding: 0 10px !important;
+}
+
+.selected {
+    color: #000000 !important;
+    font-weight: bolder !important;
 }
 
 .el-cascader-menu__wrap {
