@@ -64,14 +64,6 @@
                         <el-form-item>
                             <el-cascader v-model="qCalcForm[`s${s}_zs12`]" :options="zs12Casc"
                                 :props="{ checkStrictly: true }" clearable>
-                                <template slot-scope="{ node, data }">
-                                    <span>{{ data.label }}</span>
-                                    <span :class="{
-                                        red: zs12Map[data.label] > 0,
-                                    }">&nbsp;&nbsp;{{
-                                        zs12Map[data.label]
-                                        }}</span>
-                                </template>
                             </el-cascader>
                         </el-form-item>
                         <el-form-item :class="getTianGanColor(s, qCalcForm[`s${s}_sky`])">
@@ -176,18 +168,18 @@ export default {
             },
             // 十二长生周期计分
             zs12Map: {
-                长: 30,
-                沐: 30,
-                冠: 30,
-                临: 30,
-                旺: 30,
-                衰: 20,
-                病: 20,
-                死: 20,
-                墓: 0,
-                绝: 10,
-                胎: 10,
-                养: 10,
+                长: { mean: "上升期", score: 30 },
+                沐: { mean: "上升期", score: 30 },
+                冠: { mean: "上升期", score: 30 },
+                临: { mean: "上升期", score: 30 },
+                旺: { mean: "上升期", score: 30 },
+                衰: { mean: "衰退期", score: 20 },
+                病: { mean: "衰退期", score: 20 },
+                死: { mean: "衰退期", score: 20 },
+                墓: { mean: "衰退期", score: 0 },
+                绝: { mean: "恢复期", score: 10 },
+                胎: { mean: "恢复期", score: 10 },
+                养: { mean: "恢复期", score: 10 },
             },
 
             wuxing: ["木", "火", "土", "金", "水"],
@@ -212,7 +204,7 @@ export default {
                 s5: "中",
                 s6: "兑",
                 s7: "艮",
-                s8: "艮",
+                s8: "坎",
                 s9: "乾",
             },
             menPoMap: {
@@ -352,17 +344,17 @@ export default {
                         }
                     }
                     if (c === "zs12") {
-                        let temp = this.zs12Map[value[0]]
+                        let temp = this.zs12Map[value[0]].score
                         let last = value[1]
                         if (last) {
-                            temp += this.zs12Map[last]
+                            temp += this.zs12Map[last].score
                         }
                         num = temp / value.length // 取平均值
                         rowMap[c] = {
                             type: scoreTypeMap[c],
                             value: value.join(""),
                             score: num,
-                            mean: "",
+                            mean: `${value[0]}:${this.zs12Map[value[0]].mean}${last ? `,${last}:${this.zs12Map[last].mean}` : "?"}`,
                         }
                     }
                     // 天盘干
