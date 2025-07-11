@@ -173,13 +173,13 @@ export default {
                 冠: { mean: "上升期", score: 30 },
                 临: { mean: "上升期", score: 30 },
                 旺: { mean: "上升期", score: 30 },
-                衰: { mean: "衰退期", score: 20 },
-                病: { mean: "衰退期", score: 20 },
-                死: { mean: "衰退期", score: 20 },
+                衰: { mean: "衰退期", score: 10 },
+                病: { mean: "衰退期", score: 10 },
+                死: { mean: "衰退期", score: 10 },
                 墓: { mean: "衰退期", score: 0 },
                 绝: { mean: "恢复期", score: 10 },
-                胎: { mean: "恢复期", score: 10 },
-                养: { mean: "恢复期", score: 10 },
+                胎: { mean: "恢复期", score: 20 },
+                养: { mean: "恢复期", score: 20 },
             },
 
             wuxing: ["木", "火", "土", "金", "水"],
@@ -294,8 +294,8 @@ export default {
                 diLi: "地利",
                 renHe: "人和",
                 shenZhu: "神助",
-                zs12: "长生十二宫",
-                diPanGan: "天干作用",
+                zs12: "周期",
+                diPanGan: "格局",
                 menPo: "门迫",
                 jiXing: "击刑",
                 ruMu: "入墓",
@@ -344,7 +344,8 @@ export default {
                         }
                     }
                     if (c === "zs12") {
-                        let temp = this.zs12Map[value[0]].score
+                        let frist = value[0]
+                        let temp = this.zs12Map[frist].score
                         let last = value[1]
                         if (last) {
                             temp += this.zs12Map[last].score
@@ -354,7 +355,7 @@ export default {
                             type: scoreTypeMap[c],
                             value: value.join(""),
                             score: num,
-                            mean: `${value[0]}:${this.zs12Map[value[0]].mean}${last ? `,${last}:${this.zs12Map[last].mean}` : "?"}`,
+                            mean: `${frist}:${this.zs12Map[frist].mean}${last ? `,${last}:${this.zs12Map[last].mean}` : ""}`,
                         }
                     }
                     // 天盘干
@@ -388,7 +389,7 @@ export default {
                             rowMap["diPanGan"] = {
                                 type: scoreTypeMap["diPanGan"],
                                 value: `天:${skyGanType},地:${earthGanType}`,
-                                score: num,
+                                score: _num,
                                 mean: rel.text,
                             }
                             num += _num
