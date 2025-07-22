@@ -1,15 +1,22 @@
 <template>
-    <el-form size="mini" :model="qCalcForm" label-position="left">
-        <div class="qCalc">
+    <div class="qCalc">
+        <div class="header">
+            <p>奇门遁甲计算器</p>
+            <div>
+                <el-button size="mini" type="danger" @click="qCalcForm = {}">重置</el-button>
+                <el-button size="mini" type="primary" @click="exportDoc">导出</el-button>
+            </div>
+        </div>
+        <el-form class="qCalc-square" size="mini" :model="qCalcForm" label-position="left">
             <div v-for="s in 9" :class="['square', 's' + s]">
                 <template v-if="s !== 5">
                     <div class="cell c1">
                         <p class="sum">{{ getSquareScore(s) }}</p>
-                        <el-popover placement="right-end" title="计分详情" width="480" trigger="click">
+                        <el-popover placement="right-end" title="计分详情" width="520" trigger="click">
                             <el-table :data="sumDetailObj[s]" border stripe>
                                 <el-table-column label="类型" prop="type"></el-table-column>
-                                <el-table-column label="值" prop="value"></el-table-column>
                                 <el-table-column label="分数" prop="score"></el-table-column>
+                                <el-table-column label="值" prop="value" width="120"></el-table-column>
                                 <el-table-column label="备注" prop="mean" width="180"></el-table-column>
                             </el-table>
                             <i class="el-icon-view" slot="reference"></i>
@@ -109,17 +116,23 @@
                     </div>
                 </template>
             </div>
-        </div>
-    </el-form>
+
+        </el-form>
+    </div>
 </template>
 
 <script>
+import { Document, HeadingLevel, ImageRun, Packer, PageBreak, Paragraph, Table, TableCell, TableRow, TextRun } from 'docx'
+import { saveAs } from 'file-saver'
+import html2canvas from 'html2canvas'
+
 export default {
     data() {
         return {
             qCalcForm: {},
             squareScoreMap: {},
             sumDetailObj: {},
+            sumMap: {},
             // 神助计分
             shenZhuMap: {
                 值符: { mean: "吉神", score: 20 },
@@ -275,11 +288,15 @@ export default {
                     square[c] = val[key]
                 }
                 this.squareScoreMap = obj
+                localStorage.setItem('qCalcForm', JSON.stringify(val))
             },
             deep: true,
         },
     },
-    mounted() { },
+    mounted() {
+        let value = localStorage.getItem('qCalcForm')
+        this.qCalcForm = value ? JSON.parse(value) : {}
+    },
     methods: {
         /**
          * 计算宫格分数
@@ -488,6 +505,7 @@ export default {
                 }
             }
             this.sumDetailObj[s] = scoreTable
+            this.sumMap[s] = sum
             return sum
         },
         /**
@@ -602,6 +620,141 @@ export default {
                 this.ruMuMap.s3 = ["甲", "癸"]
             }
         },
+        getDocTables() {
+            let arr = []
+            for (let i = 1; i <= 9; i++) {
+                let tableData = this.sumDetailObj[i]
+                if (tableData && tableData.length > 1) {
+                    let title = this.squareNameMap['s' + i] + "宫：" + this.sumMap[i]
+                    arr.push(new Paragraph({
+                        text: title,
+                        heading: HeadingLevel.HEADING_1
+                    }))
+                    arr.push(new Paragraph(""))
+                    let tableHeaderProps = ['type', 'score', 'value', 'mean']
+                    let table = new Table({
+                        rows: [
+                            new TableRow({
+                                children: [
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            children: [new TextRun({
+                                                text: "类型",
+                                                bold: true
+                                            })],
+                                            alignment: "center",
+                                        })],
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            children: [new TextRun({
+                                                text: "分数",
+                                                bold: true
+                                            })],
+                                            alignment: "center",
+                                        })]
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            children: [new TextRun({
+                                                text: "值",
+                                                bold: true
+                                            })],
+                                            alignment: "center",
+                                        })]
+                                    }),
+                                    new TableCell({
+                                        children: [new Paragraph({
+                                            children: [new TextRun({
+                                                text: "备注",
+                                                bold: true
+                                            })],
+                                            alignment: "center",
+                                        })]
+                                    })
+                                ],
+                            }),
+                            ...tableData.map(item => {
+                                return new TableRow({
+                                    children: tableHeaderProps.map(prop => {
+                                        return new TableCell({
+                                            children: item.hasOwnProperty(prop) ? [new Paragraph(String(item[prop]))] : []
+                                        })
+                                    })
+                                })
+                            })
+                        ],
+                        width: { size: 100, type: "pct" },
+                        margins: {
+                            top: 100, // 上边距 100 缇
+                            bottom: 100, // 下边距 100 缇
+                            left: 100, // 左边距 100 缇
+                            right: 100, // 右边距 100 缇
+                        },
+
+                    })
+                    arr.push(table)
+                    arr.push(new Paragraph(""))
+                }
+            }
+            return arr
+        },
+        // 导出文档
+        exportDoc() {
+            html2canvas(this.$el.querySelector('.qCalc-square'), {
+                ignoreElements: (ele) => {
+                    if (ele.className === "el-input__suffix" || ele.className === "el-popover__reference-wrapper") {
+                        return true
+                    }
+                    if (ele.hasAttribute("placeholder")) {
+                        if (!ele.value) {
+                            return true
+                        }
+                    }
+                }
+            }).then(canvas => {
+                let imageBase64 = canvas.toDataURL('image/png');
+                let docu = new Document({
+                    sections: [
+                        {
+                            children: [
+                                new Paragraph({
+                                    text: "排盘计分表",
+                                    heading: HeadingLevel.TITLE,
+                                    alignment: "center"
+                                }),
+                                new Paragraph(""),
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: "排盘图",
+                                        }),
+                                        new ImageRun({
+                                            data: imageBase64,
+                                            transformation: { width: 600, height: 600 }
+                                        }),
+                                    ],
+                                    alignment: "center"
+                                }),
+                                new Paragraph(""),
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: '总分:' + Object.values(this.sumMap).reduce((acc, curr) => acc + curr),
+                                        }),
+                                        new PageBreak()
+                                    ],
+                                }),
+                                ...this.getDocTables()
+                            ]
+                        }
+                    ]
+                })
+                Packer.toBlob(docu).then(data => {
+                    saveAs(data, "排盘详情表.docx")
+                })
+            })
+        }
     },
 }
 </script>
@@ -609,12 +762,28 @@ export default {
 <style lang="less">
 .qCalc {
     width: 92vh;
-    height: 92vh;
-    border: 1px solid #000;
     margin: 0px auto;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+
+    .header {
+        margin: 10px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        p {
+            font-size: 20px;
+            font-weight: 500;
+        }
+    }
+
+    .qCalc-square {
+        width: 92vh;
+        height: 92vh;
+        border: 1px solid #000;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+    }
 
     .square {
         flex: 1;
@@ -639,7 +808,7 @@ export default {
             font-size: 18px;
             font-weight: 500;
             text-align: center;
-            padding: 0 10px;
+            padding: 0 6px;
             border: none;
 
             &::placeholder {
@@ -650,7 +819,7 @@ export default {
         }
 
         .el-input__icon {
-            width: 22px;
+            width: 15px;
         }
 
         .el-input__suffix {
@@ -802,6 +971,10 @@ export default {
 
 .el-cascader-menu__wrap {
     height: fit-content !important;
+}
+
+.el-cascader .el-input .el-input__inner {
+    text-overflow: unset !important;
 }
 
 .el-scrollbar__wrap {

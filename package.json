@@ -14,7 +14,10 @@
   "main": "background.js",
   "dependencies": {
     "core-js": "^3.8.3",
+    "docx": "^9.5.1",
     "element-ui": "^2.15.14",
+    "file-saver": "^2.0.5",
+    "html2canvas": "^1.4.1",
     "less": "^4.3.0",
     "less-loader": "^12.3.0",
     "vue": "^2.6.14"
