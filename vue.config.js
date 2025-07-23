@@ -3,4 +3,9 @@ module.exports = defineConfig({
     transpileDependencies: true,
     lintOnSave: false,
     publicPath: './',
+    pluginOptions: {
+        electronBuilder: {
+            customFileProtocol: "./"
+        }
+    }
 })
